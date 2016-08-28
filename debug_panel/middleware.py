@@ -72,4 +72,18 @@ class DebugPanelMiddleware(debug_toolbar.middleware.DebugToolbarMiddleware):
             response['X-debug-data-url'] = request.build_absolute_uri(
                 reverse('debug_data', urlconf=debug_panel.urls, kwargs={'cache_key': cache_key}))
 
+            # add request to requests list if it's not internal (i.e. for /__debug__/ calls)
+            if not '/__debug__/' in request.path:
+                requests_cache_key = "debug_panel_requests"
+                requests = cache.get(requests_cache_key)
+                if not requests:
+                    requests = []
+
+                requests.append({
+                    'key': response['X-debug-data-url'],
+                    'url': request.path
+                })
+
+                cache.set(requests_cache_key, requests)
+
         return response
